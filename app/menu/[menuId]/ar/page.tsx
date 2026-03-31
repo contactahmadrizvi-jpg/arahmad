@@ -84,9 +84,46 @@ export default function ARViewPage({ params }: PageProps) {
     }
   };
 
+  // Load scripts on mount instead of on button click to be ready
+  useEffect(() => {
+    loadARScripts();
+    
+    return () => {
+      // Global cleanup when page unmounts
+      const video = document.getElementById("arjs-video");
+      if (video) video.remove();
+      const style = document.body.style;
+      style.overflow = "";
+      document.documentElement.classList.remove("a-fullscreen");
+      document.body.classList.remove("a-fullscreen");
+    };
+  }, []);
+
+  // Cleanup when exiting AR mode
+  useEffect(() => {
+    if (!arMode) {
+      const video = document.getElementById("arjs-video");
+      if (video) video.remove();
+      document.documentElement.classList.remove("a-fullscreen");
+      document.body.classList.remove("a-fullscreen");
+    }
+  }, [arMode]);
+
   const enterAR = async () => {
-    await loadARScripts();
-    setArMode(true);
+    // Check for secure context and media device support
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("Camera access is only available over HTTPS or localhost. Please ensure you are using a secure connection.");
+      return;
+    }
+    
+    try {
+      // Request camera permission upfront to avoid issues with A-Frame auto-start
+      await navigator.mediaDevices.getUserMedia({ video: true });
+      setArMode(true);
+    } catch (err) {
+      console.error("Camera permission denied:", err);
+      alert("Camera permission is required to view the AR experience.");
+    }
   };
 
   const displayItem = selectedItem || item;
@@ -118,18 +155,38 @@ export default function ARViewPage({ params }: PageProps) {
   // AR Mode — full-screen AR.js scene
   if (arMode && displayItem) {
     return (
-      <div className="fixed inset-0 z-50 bg-black" ref={arSceneRef}>
+      <div className="fixed inset-0 z-[100] bg-transparent" ref={arSceneRef}>
+        {/* Custom style to ensure AR.js video is visible */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          #arjs-video {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            margin-left: 0 !important;
+            z-index: -1 !important;
+            object-fit: cover !important;
+          }
+          .a-canvas {
+            z-index: 1 !important;
+          }
+          body {
+            overflow: hidden !important;
+          }
+        `}} />
+
         {/* AR.js A-Frame Scene */}
         <div
+          className="w-full h-full"
           dangerouslySetInnerHTML={{
             __html: `
               <a-scene
                 embedded
-                arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3"
+                arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best"
                 vr-mode-ui="enabled: false"
-                renderer="logarithmicDepthBuffer: true; precision: mediump"
-                gesture-detector
-                style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;"
+                renderer="antialias: true; alpha: true; logarithmicDepthBuffer: true; colorManagement: true"
+                style="width: 100%; height: 100%;"
               >
                 <a-assets>
                   <img id="dish-img" src="${displayItem.imageUrl}" crossorigin="anonymous" />
