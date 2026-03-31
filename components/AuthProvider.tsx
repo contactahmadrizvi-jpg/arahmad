@@ -21,6 +21,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Skip if auth is not properly initialized (e.g. during build-time)
+    if (!auth || typeof auth.onAuthStateChanged !== "function") {
+      setLoading(false);
+      return;
+    }
+
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);

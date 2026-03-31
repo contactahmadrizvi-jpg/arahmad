@@ -1,6 +1,6 @@
-import { initializeApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeApp, getApps, FirebaseApp } from "firebase/app";
+import { Auth, getAuth } from "firebase/auth";
+import { Firestore, getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,8 +11,26 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(app);
-const db = getFirestore(app);
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
+
+// Only initialize if we have the config or if we are in a browser environment
+// This prevents build-time errors on Vercel when env vars are missing
+const isConfigValid = !!firebaseConfig.apiKey;
+
+if (typeof window !== "undefined" || isConfigValid) {
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  auth = getAuth(app);
+  db = getFirestore(app);
+} else {
+  // Mock implementations or placeholders for build-time/server-side
+  // @ts-ignore
+  app = {} as FirebaseApp;
+  // @ts-ignore
+  auth = {} as Auth;
+  // @ts-ignore
+  db = {} as Firestore;
+}
 
 export { app, auth, db };
