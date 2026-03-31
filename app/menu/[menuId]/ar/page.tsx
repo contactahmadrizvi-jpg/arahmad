@@ -170,13 +170,16 @@ export default function ARViewPage({ params }: PageProps) {
             height: 100% !important;
             margin-left: 0 !important;
             z-index: -1 !important;
-            object-fit: cover !important;
+            object-fit: contain !important;
+            background: #000;
           }
           .a-canvas {
             z-index: 1 !important;
           }
           body {
             overflow: hidden !important;
+            position: fixed;
+            width: 100%;
           }
         `}} />
 
@@ -187,7 +190,7 @@ export default function ARViewPage({ params }: PageProps) {
             __html: `
               <a-scene
                 embedded
-                arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best"
+                arjs="sourceType: webcam; sourceWidth: 1280; sourceHeight: 720; displayWidth: 1280; displayHeight: 720; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3; trackingMethod: best; facingMode: environment"
                 vr-mode-ui="enabled: false"
                 renderer="antialias: true; alpha: true; logarithmicDepthBuffer: true; colorManagement: true"
                 style="width: 100%; height: 100%;"
