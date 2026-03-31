@@ -117,8 +117,12 @@ export default function ARViewPage({ params }: PageProps) {
     }
     
     try {
-      // Request camera permission upfront to avoid issues with A-Frame auto-start
-      await navigator.mediaDevices.getUserMedia({ video: true });
+      // Request camera permission upfront to verify access
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      // STOP the stream tracks immediately to release the camera hardware
+      // This ensures A-Frame/AR.js can then open its own stream without a 'NotReadableError'
+      stream.getTracks().forEach(track => track.stop());
+      
       setArMode(true);
     } catch (err) {
       console.error("Camera permission denied:", err);
