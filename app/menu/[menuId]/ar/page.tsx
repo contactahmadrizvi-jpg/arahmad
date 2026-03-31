@@ -195,11 +195,36 @@ export default function ARViewPage({ params }: PageProps) {
                 renderer="antialias: true; alpha: true; logarithmicDepthBuffer: true; colorManagement: true"
                 style="width: 100%; height: 100%;"
               >
+                <script>
+                  AFRAME.registerComponent('marker-handler', {
+                    init: function () {
+                      const status = document.getElementById('ar-status');
+                      this.el.addEventListener('markerFound', () => {
+                        if (status) {
+                          status.innerText = 'FOUND! ✅';
+                          status.classList.remove('bg-violet-600/80', 'animate-pulse');
+                          status.classList.add('bg-emerald-600/90');
+                        }
+                      });
+                      this.el.addEventListener('markerLost', () => {
+                        if (status) {
+                          status.innerText = 'SEARCHING...';
+                          status.classList.add('bg-violet-600/80', 'animate-pulse');
+                          status.classList.remove('bg-emerald-600/90');
+                        }
+                      });
+                    }
+                  });
+                </script>
+
                 <a-assets>
                   <img id="dish-img" src="${displayItem.imageUrl}" crossorigin="anonymous" />
                 </a-assets>
 
-                <a-marker preset="hiro">
+                <a-marker preset="hiro" marker-handler>
+                  <!-- Debug Box -->
+                  <a-box position="0 0 0" scale="0.2 0.2 0.2" color="#8b5cf6" opacity="0.8"></a-box>
+                  
                   <!-- Dish image plane floating above the marker -->
                   <a-plane
                     src="#dish-img"
@@ -245,17 +270,42 @@ export default function ARViewPage({ params }: PageProps) {
         />
 
         {/* AR Overlay UI */}
-        <div className="fixed top-0 left-0 right-0 z-50 p-4 flex items-center justify-between pointer-events-none">
-          <button
-            onClick={() => setArMode(false)}
-            className="pointer-events-auto px-4 py-2 rounded-xl bg-black/60 backdrop-blur-sm text-white text-sm font-medium border border-white/10"
-          >
-            ← Back
-          </button>
-          <div className="px-4 py-2 rounded-xl bg-black/60 backdrop-blur-sm text-white/60 text-xs border border-white/10">
-            Point camera at Hiro marker
+        <div className="fixed top-0 left-0 right-0 z-50 p-4 flex flex-col gap-2 pointer-events-none">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setArMode(false)}
+              className="pointer-events-auto px-4 py-2 rounded-xl bg-black/60 backdrop-blur-sm text-white text-sm font-medium border border-white/10"
+            >
+              ← Back
+            </button>
+            <div id="ar-status" className="px-4 py-2 rounded-xl bg-violet-600/80 backdrop-blur-sm text-white text-xs font-bold border border-white/20 animate-pulse">
+              SEARCHING...
+            </div>
+          </div>
+          <div className="px-4 py-2 rounded-xl bg-black/60 backdrop-blur-sm text-white/60 text-[10px] border border-white/10 text-center">
+            Ensure Hiro marker is fully visible on your other screen
           </div>
         </div>
+
+        {/* Script to handle marker events */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          window.addEventListener('DOMContentLoaded', () => {
+            const marker = document.querySelector('a-marker');
+            const status = document.getElementById('ar-status');
+            if (marker && status) {
+              marker.addEventListener('markerFound', () => {
+                status.innerText = 'FOUND! ✅';
+                status.classList.remove('bg-violet-600/80', 'animate-pulse');
+                status.classList.add('bg-emerald-600/90');
+              });
+              marker.addEventListener('markerLost', () => {
+                status.innerText = 'SEARCHING...';
+                status.classList.add('bg-violet-600/80', 'animate-pulse');
+                status.classList.remove('bg-emerald-600/90');
+              });
+            }
+          });
+        `}} />
 
         {/* Bottom info panel */}
         <div className="fixed bottom-0 left-0 right-0 z-50 p-4 pointer-events-none">
